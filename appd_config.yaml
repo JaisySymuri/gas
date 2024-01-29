@@ -1,0 +1,14 @@
+controller:
+  host: "pthandalinformasiteknologi-nfr.saas.appdynamics.com"
+  port: 443
+  useSSL: true
+  account: "pthandalinformasiteknologi-nfr"
+  accessKey: "cw1cyt3chkw8"
+
+appContext:
+  appName: "GoServer9"
+  tierName: "TierServer9"
+  nodeName: "NodeServer9"
+
+misc:
+  initTimeoutMs: 1000
