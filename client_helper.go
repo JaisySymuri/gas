@@ -1,23 +1,22 @@
 package gas
 
 import (
-	appd "appdynamics"
 	"fmt"
 	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
 )
 
-func ClientBTStarter(w http.ResponseWriter, r *http.Request, appdBTNameHDL string) appd.BtHandle {
-	btHandle := appd.StartBT(appdBTNameHDL, "") // Use the provided BT name
+func ClientBTStarter(w http.ResponseWriter, r *http.Request, appdBTNameHDL string) BtHandle {
+	btHandle := StartBT(appdBTNameHDL, "") // Use the provided BT name
 	return btHandle
 }
 
-func ClientBTEnder(btHandle appd.BtHandle, r *http.Request, endpoint string, sqlStatement string) {
+func ClientBTEnder(btHandle BtHandle, r *http.Request, endpoint string, sqlStatement string) {
 
 	// Set the snapshot URL if snapshotting is active
 	currentURL := GetCurrentURL(r)
-	appd.SetBTURL(btHandle, currentURL)
+	SetBTURL(btHandle, currentURL)
 
 	backendName := BackendName // A unique name for the backend
 	backendType := BackendType // Specifies that this is a backend
@@ -28,19 +27,19 @@ func ClientBTEnder(btHandle appd.BtHandle, r *http.Request, endpoint string, sql
 	}
 	resolveBackend := false // Set to false to use static backend configuration
 
-	appd.AddBackend(backendName, backendType, backendProperties, resolveBackend)
+	AddBackend(backendName, backendType, backendProperties, resolveBackend)
 
 	// Generate a new UUID
 	my_ec_guid := uuid.New().String()
 
 	// Convert btHandle to the correct type (appdynamics.BtHandle)
-	businessTransactionHandle := appd.BtHandle(btHandle)
+	businessTransactionHandle := BtHandle(btHandle)
 
-	ecHandle := appd.StartExitcall(businessTransactionHandle, backendName)
-	hdr := appd.GetExitcallCorrelationHeader(ecHandle)
+	ecHandle := StartExitcall(businessTransactionHandle, backendName)
+	hdr := GetExitcallCorrelationHeader(ecHandle)
 
 	req, err := CreateRequest(endpoint, "POST", nil)
-	req.Header.Add(appd.APPD_CORRELATION_HEADER_NAME, hdr)
+	req.Header.Add(APPD_CORRELATION_HEADER_NAME, hdr)
 
 	// Send request
 	client := &http.Client{}
@@ -73,18 +72,18 @@ func ClientBTEnder(btHandle appd.BtHandle, r *http.Request, endpoint string, sql
 	}
 
 	// Optionally store the handle in the global registry
-	appd.StoreExitcall(ecHandle, my_ec_guid)
+	StoreExitcall(ecHandle, my_ec_guid)
 
 	// Retrieve a stored handle from the global registry
-	myEcHandle := appd.GetExitcall(my_ec_guid)
+	myEcHandle := GetExitcall(my_ec_guid)
 
 	// Add the SQL statement to the exit call details
-	err = appd.SetExitcallDetails(ecHandle, sqlStatement)
+	err = SetExitcallDetails(ecHandle, sqlStatement)
 	if err != nil {
 		// Handle the error if needed
 		fmt.Println("Error setting exit call details:", err)
 	}
 
-	appd.EndExitcall(myEcHandle)
-	appd.EndBT(businessTransactionHandle)
+	EndExitcall(myEcHandle)
+	EndBT(businessTransactionHandle)
 }
